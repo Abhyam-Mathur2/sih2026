@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import io
 import re
+import logging
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import Any
@@ -22,6 +23,36 @@ from app.core.config import settings
 # Expected CSV columns (case-insensitive)
 REQUIRED_COLUMNS = {"legacy_material_code", "original_description"}
 OPTIONAL_COLUMNS = {"category_id", "unit_of_measure", "manufacturer"}
+
+logger = logging.getLogger(__name__)
+
+
+def _read_csv_df(content: bytes) -> "pd.DataFrame":
+    """Read CSV bytes into a DataFrame using utf-8-sig and normalize headers.
+
+    This handles BOM, trims whitespace, lower-cases and replaces spaces with
+    underscores so header matching is robust.
+    """
+    # Decode with utf-8-sig to remove BOM if present
+    text = content.decode("utf-8-sig")
+
+    # Some CSVs incorrectly wrap the entire line in quotes, producing a
+    # single field like '"col1,col2"'. Detect that case and unwrap lines
+    # so pandas can parse the proper comma-separated columns.
+    lines = text.splitlines()
+    non_empty = [l for l in lines if l.strip()]
+    if non_empty and all(l.startswith('"') and l.endswith('"') for l in non_empty):
+        logger.info("Detected whole-line quoted CSV; unwrapping lines for parsing")
+        unwrapped = [l[1:-1] for l in non_empty]
+        text_to_parse = "\n".join(unwrapped)
+    else:
+        text_to_parse = text
+
+    df = pd.read_csv(io.StringIO(text_to_parse))
+    # Normalize column names: strip, lower, replace spaces with underscores
+    df.columns = [str(c).strip().lower().replace(" ", "_") for c in df.columns]
+    logger.info("Parsed CSV columns: %s", list(df.columns))
+    return df
 
 
 def _storage_object_name(job_id: int, file_name: str) -> str:
@@ -89,14 +120,15 @@ async def process_csv_upload(
     failed = 0
 
     try:
-        df = pd.read_csv(io.BytesIO(content))
-        # Normalize column names
-        df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
+        df = _read_csv_df(content)
 
         missing = REQUIRED_COLUMNS - set(df.columns)
         if missing:
             job.status = UploadStatus.FAILED
-            job.error_summary = {"error": f"Missing required columns: {missing}"}
+            job.error_summary = {
+                "error": f"Missing required columns: {missing}",
+                "detected_columns": list(df.columns),
+            }
             job.completed_at = datetime.now(timezone.utc)
             await db.flush()
             return job

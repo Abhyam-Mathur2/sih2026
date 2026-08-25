@@ -344,7 +344,8 @@ function UploadPage() {
     if (!file) return;
     const form = new FormData();
     form.append('file', file);
-    form.append('cpse_id', '1');
+    // Use demo manager CPSE (4) so uploads map to seeded CPSE in the local DB
+    form.append('cpse_id', '4');
     try {
       const { data } = await api.post('/uploads', form);
       setResult(
