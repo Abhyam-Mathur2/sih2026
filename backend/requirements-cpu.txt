@@ -1,0 +1,17 @@
+# ============================================================
+# CPU-only PyTorch pre-install
+# ============================================================
+# Install THIS FILE FIRST before installing the main project.
+# This pins torch to the CPU-only wheel from the official
+# PyTorch index so that pip does not accidentally download
+# the massive NVIDIA/CUDA packages.
+#
+# Usage (Windows PowerShell, inside activated .venv):
+#   pip install -r requirements-cpu.txt
+#   pip install -e ".[dev]"
+#
+# PyTorch CPU-only (Windows/Linux/macOS compatible)
+--index-url https://download.pytorch.org/whl/cpu
+torch>=2.2.0
+torchvision>=0.17.0
+torchaudio>=2.2.0
