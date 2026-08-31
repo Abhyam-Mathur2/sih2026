@@ -51,17 +51,22 @@ async def seed_data() -> None:
             CPSE(
                 name="Chennai Petroleum Corporation Limited",
                 short_code="CPCL",
-                description="Synthetic demonstration organization",
+                description="Oil & Gas refining CPSE",
             ),
             CPSE(
                 name="Indian Oil Corporation Limited",
                 short_code="IOCL",
-                description="Synthetic demonstration organization",
+                description="Oil & Gas marketing and refining CPSE",
             ),
             CPSE(
                 name="Steel Authority of India Limited",
                 short_code="SAIL",
-                description="Synthetic demonstration organization",
+                description="Steel manufacturing CPSE",
+            ),
+            CPSE(
+                name="Bharat Heavy Electricals Limited",
+                short_code="BHEL",
+                description="Heavy engineering and power equipment CPSE",
             ),
         ]
         for c in cpses:
@@ -69,27 +74,27 @@ async def seed_data() -> None:
         await db.flush()
 
         # ------------------------------------------------------------------
-        # 2. Users (demo credentials)
+        # 2. Users (demo credentials — synced with frontend defaults)
         # ------------------------------------------------------------------
         logger.info("Seeding Users…")
         users = [
             User(
                 name="BMIM Administrator",
-                email="admin@example.com",
-                password_hash=get_password_hash("Admin@123"),
+                email="admin@bmim.gov.in",
+                password_hash=get_password_hash("admin_secure_password_2026"),
                 role=UserRole.ADMIN,
                 is_active=True,
             ),
             User(
                 name="Technical Reviewer",
-                email="reviewer@example.com",
+                email="reviewer@bmim.gov.in",
                 password_hash=get_password_hash("Reviewer@123"),
                 role=UserRole.TECHNICAL_REVIEWER,
                 is_active=True,
             ),
             User(
-                name="CPSE Manager",
-                email="manager@example.com",
+                name="CPSE Manager – CPCL",
+                email="manager@bmim.gov.in",
                 password_hash=get_password_hash("Manager@123"),
                 role=UserRole.CPSE_MANAGER,
                 cpse_id=cpses[0].id,
@@ -100,16 +105,19 @@ async def seed_data() -> None:
             db.add(u)
 
         # ------------------------------------------------------------------
-        # 3. Material categories
+        # 3. Material categories (expanded to cover all 8 PS categories)
         # ------------------------------------------------------------------
         logger.info("Seeding Material Categories…")
         categories = [
             MaterialCategory(name="Valves", code="VLV"),
-            MaterialCategory(name="Pipes", code="PIP"),
+            MaterialCategory(name="Pipes & Tubes", code="PIP"),
             MaterialCategory(name="Pumps", code="PMP"),
             MaterialCategory(name="Motors", code="MTR"),
             MaterialCategory(name="Bearings", code="BRG"),
             MaterialCategory(name="Electrical Components", code="ELC"),
+            MaterialCategory(name="Fasteners", code="FST"),
+            MaterialCategory(name="Gaskets & Seals", code="GSK"),
+            MaterialCategory(name="Instruments", code="INS"),
         ]
         for cat in categories:
             db.add(cat)
@@ -152,20 +160,41 @@ async def seed_data() -> None:
                 "BEARING 6205",
                 "BALL BEARING 6205",
             ),
+            # Additional categories for better coverage
+            (
+                "HEX BOLT M12 Grade:8.8",
+                "HEXAGONAL BOLT M12X50 Grade:8.8",
+                "BOLT HEX M12 Grade:8.8",
+            ),
+            (
+                "SPIRAL WOUND GASKET DN50 PN16",
+                "GASKET SPIRAL WOUND 2 INCH PN16",
+                "SWG GASKET DN50",
+            ),
+            (
+                "PRESSURE GAUGE 0-10 BAR Range:0-10",
+                "GAUGE PRESSURE 0-10BAR",
+                "PRESSURE GAUGE 10BAR",
+            ),
         ]
 
+        # Category assignment based on group index
+        cat_map = [0, 0, 0, 2, 3, 4, 6, 7, 8]  # indices into categories list
+
         for group_idx, variants in enumerate(templates):
+            cat_idx = cat_map[group_idx] if group_idx < len(cat_map) else 5
             for cpse_idx, desc in enumerate(variants):
-                # Create 6 records per (group, cpse) combination
-                for extra in range(6):
+                cpse = cpses[cpse_idx % len(cpses)]
+                # Create 4 records per (group, cpse) combination
+                for extra in range(4):
                     description = desc if extra == 0 else f"{desc} LOT {extra + 1}"
-                    code = f"{cpses[cpse_idx].short_code}-{group_idx + 1:02d}{extra:02d}"
+                    code = f"{cpse.short_code}-{group_idx + 1:02d}{extra:02d}"
                     mat = Material(
-                        cpse_id=cpses[cpse_idx].id,
+                        cpse_id=cpse.id,
                         legacy_material_code=code,
                         original_description=description,
                         normalized_description=normalize_description(desc),
-                        category_id=categories[min(group_idx, len(categories) - 1)].id,
+                        category_id=categories[cat_idx].id,
                         unit_of_measure="EA",
                         status=MaterialStatus.ACTIVE,
                     )
@@ -189,7 +218,7 @@ async def seed_data() -> None:
         logger.info("Seeding National Material Codes…")
         nmcs = [
             NationalMaterial(
-                national_material_code="NMC-VLV-001",
+                national_material_code="NMC-VLV-BALLVALVE-SS316-DN50-0001",
                 standard_description="BALL VALVE 2 INCH STAINLESS STEEL 316 PN16 FLANGED",
                 category_id=categories[0].id,
                 standard_attributes={
@@ -202,7 +231,7 @@ async def seed_data() -> None:
                 status=NationalMaterialStatus.ACTIVE,
             ),
             NationalMaterial(
-                national_material_code="NMC-VLV-002",
+                national_material_code="NMC-VLV-BALLVALVE-SS316-DN100-0001",
                 standard_description="BALL VALVE 4 INCH STAINLESS STEEL 316 PN16",
                 category_id=categories[0].id,
                 standard_attributes={
@@ -221,9 +250,9 @@ async def seed_data() -> None:
         logger.info("Database seeding completed successfully.")
         logger.info("")
         logger.info("Demo credentials:")
-        logger.info("  Admin:    admin@example.com    / Admin@123")
-        logger.info("  Reviewer: reviewer@example.com / Reviewer@123")
-        logger.info("  Manager:  manager@example.com  / Manager@123")
+        logger.info("  Admin:    admin@bmim.gov.in    / admin_secure_password_2026")
+        logger.info("  Reviewer: reviewer@bmim.gov.in / Reviewer@123")
+        logger.info("  Manager:  manager@bmim.gov.in  / Manager@123")
 
 
 if __name__ == "__main__":

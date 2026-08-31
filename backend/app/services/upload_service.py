@@ -148,12 +148,18 @@ async def process_csv_upload(
                 # the same abbreviation and critical-attribute rules.
                 from app.ai.pipeline import extract_attributes, normalize_description
                 norm_desc = normalize_description(desc)
+                attrs = extract_attributes(desc)
+
+                # Auto-classify based on product_type
+                from app.services.classification_service import classify_material
+                auto_category_id = await classify_material(db, attrs.get("product_type"))
 
                 mat = Material(
                     cpse_id=job.cpse_id,
                     legacy_material_code=code,
                     original_description=desc,
                     normalized_description=norm_desc,
+                    category_id=auto_category_id,
                     unit_of_measure=str(row.get("unit_of_measure", "")).strip() or None,
                     manufacturer=str(row.get("manufacturer", "")).strip() or None,
                     status=MaterialStatus.ACTIVE,
@@ -171,7 +177,7 @@ async def process_csv_upload(
                 )
                 db.add(emb)
 
-                for attribute_name, attribute_value in extract_attributes(desc).items():
+                for attribute_name, attribute_value in attrs.items():
                     db.add(MaterialAttribute(
                         material_id=mat.id,
                         attribute_name=attribute_name,
@@ -191,6 +197,22 @@ async def process_csv_upload(
         job.error_summary = {"errors": errors[:50]} if errors else None  # limit stored errors
         job.completed_at = datetime.now(timezone.utc)
         await db.flush()
+
+        # Audit trail for upload completion
+        from app.services.audit_service import log_action
+        await log_action(
+            db,
+            user_id=job.uploaded_by,
+            entity_type="UploadJob",
+            entity_id=job.id,
+            action="CSV_UPLOAD_COMPLETED",
+            new_value={
+                "file_name": job.file_name,
+                "processed": processed,
+                "failed": failed,
+                "status": job.status.value,
+            },
+        )
 
     except Exception as e:
         job.status = UploadStatus.FAILED

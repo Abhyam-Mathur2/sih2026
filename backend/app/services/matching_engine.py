@@ -79,7 +79,14 @@ def semantic_score(emb_a: list[float], emb_b: list[float]) -> float:
 def attribute_score(attrs_a: dict[str, str], attrs_b: dict[str, str]) -> float:
     """Jaccard similarity of attribute key-value pairs (0-100)."""
     if not attrs_a and not attrs_b:
-        return 100.0
+        # Neither side yielded any attributes -- this tells us NOTHING about
+        # whether the two materials match, so treat it as neutral (matching
+        # the same "50 = unknown" convention technical_score already uses
+        # below), not a false 100% match. The old behaviour silently inflated
+        # final_score for exactly the categories extract_attributes couldn't
+        # parse -- i.e. it was most confidently wrong where it understood the
+        # least.
+        return 50.0
     if not attrs_a or not attrs_b:
         return 0.0
     set_a = {f"{k}:{normalize_text(v)}" for k, v in attrs_a.items()}

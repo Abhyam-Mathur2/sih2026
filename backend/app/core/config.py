@@ -28,7 +28,7 @@ def _default_upload_dir() -> str:
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env", "../.env"),
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------
     # Application
     # ------------------------------------------------------------------
-    app_name: str = "BMIM – Bharat Material Intelligence Network"
+    app_name: str = "SANGAM – Standardized AI-driven National Gateway for Aggregated Materials"
     app_version: str = "1.0.0"
     environment: str = "development"
     debug: bool = True

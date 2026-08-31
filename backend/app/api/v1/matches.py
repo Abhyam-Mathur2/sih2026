@@ -83,3 +83,16 @@ async def trigger_matching(
 ) -> list[MatchRead]:
     matches = await match_service.trigger_matching_for_material(db, payload.material_id, payload.top_k)
     return [MatchRead.model_validate(m) for m in matches]
+
+
+@router.post("/batch-detect", status_code=200, summary="Batch duplicate detection across all materials")
+async def batch_detect(
+    top_k: int = Query(10, ge=1, le=50),
+    min_score: float = Query(60.0, ge=0, le=100),
+    limit_materials: int = Query(500, ge=1, le=5000),
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_reviewer),
+) -> dict:
+    return await match_service.batch_detect_duplicates(
+        db, top_k=top_k, min_score=min_score, limit_materials=limit_materials
+    )

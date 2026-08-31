@@ -13,7 +13,7 @@ from app.core.config import settings
 from app.core.exceptions import BMIMException, bmim_exception_handler
 from app.core.logging import get_logger
 
-logger = get_logger("bmim")
+logger = get_logger("sangam")
 
 logging.basicConfig(level=logging.INFO)
 
@@ -21,10 +21,10 @@ logging.basicConfig(level=logging.INFO)
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Startup actions
-    logger.info("Starting BMIM backend app", env=settings.environment, debug=settings.debug)
+    logger.info("Starting SANGAM backend app", env=settings.environment, debug=settings.debug)
     yield
     # Shutdown actions
-    logger.info("Stopping BMIM backend app")
+    logger.info("Stopping SANGAM backend app")
 
 
 app = FastAPI(

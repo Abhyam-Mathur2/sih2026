@@ -67,20 +67,40 @@ async def list_materials(
 
 
 async def create_material(db: AsyncSession, payload: MaterialCreate) -> Material:
+    attrs = extract_attributes(payload.original_description)
+
+    # Auto-classify if no category_id provided
+    category_id = payload.category_id
+    if not category_id:
+        from app.services.classification_service import classify_material
+        category_id = await classify_material(db, attrs.get("product_type"))
+
     mat = Material(
         cpse_id=payload.cpse_id,
         legacy_material_code=payload.legacy_material_code,
         original_description=payload.original_description,
-        category_id=payload.category_id,
+        category_id=category_id,
         unit_of_measure=payload.unit_of_measure,
         manufacturer=payload.manufacturer,
         normalized_description=normalize_description(payload.original_description),
     )
     db.add(mat)
     await db.flush()
-    for key, value in extract_attributes(payload.original_description).items():
+    for key, value in attrs.items():
         db.add(MaterialAttribute(material_id=mat.id, attribute_name=key, attribute_value=value, normalized_value=value))
     await db.flush()
+
+    # Audit trail
+    from app.services.audit_service import log_action
+    await log_action(
+        db,
+        user_id=None,
+        entity_type="Material",
+        entity_id=mat.id,
+        action="MATERIAL_CREATED",
+        new_value={"code": mat.legacy_material_code, "description": mat.original_description},
+    )
+
     await db.refresh(mat)
     return mat
 
