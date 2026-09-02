@@ -104,7 +104,7 @@ export function getWebApiBaseUrl(): string {
   return import.meta.env.VITE_API_BASE_URL || 'https://sih2026-e5wz.onrender.com/api/v1';
 }
 
-const api = axios.create({ baseURL: getWebApiBaseUrl(), timeout: 35000 });
+const api = axios.create({ baseURL: getWebApiBaseUrl(), timeout: 60000 });
 
 api.interceptors.request.use((config) => {
   config.baseURL = getWebApiBaseUrl();

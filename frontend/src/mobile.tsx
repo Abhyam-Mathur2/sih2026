@@ -65,8 +65,8 @@ function getApiBaseUrl(): string {
   return import.meta.env.VITE_API_BASE_URL || 'https://sih2026-e5wz.onrender.com/api/v1';
 }
 
-// Mobile API client
-const mobileApi = axios.create({ baseURL: getApiBaseUrl(), timeout: 35000 });
+// Mobile API client (60s timeout accommodates Render free-tier spin-up)
+const mobileApi = axios.create({ baseURL: getApiBaseUrl(), timeout: 60000 });
 
 mobileApi.interceptors.request.use(async (config) => {
   const token = await StorageAdapter.get('sangam_token') || await StorageAdapter.get('bmim_token');
