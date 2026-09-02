@@ -546,7 +546,10 @@ function Materials() {
                           );
                           refetch();
                         } catch (err: any) {
-                          const msg = err.response?.data?.detail || 'Failed to trigger matching. Check server connection.';
+                          const detail = err.response?.data?.detail;
+                          const msg = typeof detail === 'string'
+                            ? detail
+                            : (Array.isArray(detail) ? detail.map((d: any) => d.msg || JSON.stringify(d)).join(', ') : (err.message || 'Failed to trigger matching. Check server connection.'));
                           showToast('Matching Failed', msg, 'error');
                         } finally {
                           setMatchingId(null);

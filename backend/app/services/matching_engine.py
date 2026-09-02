@@ -124,7 +124,12 @@ def technical_score(mat_a: Any, mat_b: Any) -> float:
     mfr_b = _extract_field(mat_b, "manufacturer")
     if mfr_a and mfr_b:
         components += 1
-        score += fuzzy_score(mfr_a, mfr_b)
+        if _RAPIDFUZZ_AVAILABLE and hasattr(fuzz, "token_set_ratio"):
+            score += float(fuzz.token_set_ratio(mfr_a, mfr_b))
+        elif mfr_a in mfr_b or mfr_b in mfr_a:
+            score += 90.0
+        else:
+            score += fuzzy_score(mfr_a, mfr_b)
 
     return score / components if components > 0 else 50.0  # neutral if unknown
 

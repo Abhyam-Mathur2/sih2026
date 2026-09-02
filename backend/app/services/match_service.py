@@ -348,10 +348,7 @@ async def trigger_matching_for_material(
             db.add(match)
             created_matches.append(match)
 
-    await db.flush()
-    await db.commit()
-
-    # Audit
+    # Audit in the same transaction
     from app.services.audit_service import log_action
     await log_action(
         db,
@@ -365,6 +362,9 @@ async def trigger_matching_for_material(
             "top_score": round(top[0][0], 2) if top else 0,
         },
     )
+
+    await db.flush()
+    await db.commit()
 
     return created_matches
 
