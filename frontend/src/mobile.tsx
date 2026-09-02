@@ -61,9 +61,8 @@ function getApiBaseUrl(): string {
   // Check for saved custom URL first
   const saved = localStorage.getItem('sangam_api_url');
   if (saved) return saved;
-  // Physical Android device default (host PC Wi-Fi IP)
-  if (Capacitor.isNativePlatform()) return 'http://192.168.1.193:8000/api/v1';
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+  // Default to live Render cloud backend
+  return import.meta.env.VITE_API_BASE_URL || 'https://sih2026-e5wz.onrender.com/api/v1';
 }
 
 // Mobile API client
@@ -266,11 +265,11 @@ function MobileLogin() {
               style={{ fontSize: '13px', padding: '8px' }}
             />
             <div className="m-server-presets">
+              <button type="button" className="m-preset-btn" style={{ background: '#138a72', color: 'white' }} onClick={() => applyPresetUrl('https://sih2026-e5wz.onrender.com/api/v1')}>
+                ☁️ Render Cloud (Live)
+              </button>
               <button type="button" className="m-preset-btn" onClick={() => applyPresetUrl('http://192.168.1.193:8000/api/v1')}>
                 💻 PC Wi-Fi (192.168.1.193)
-              </button>
-              <button type="button" className="m-preset-btn" onClick={() => applyPresetUrl('http://10.0.2.2:8000/api/v1')}>
-                📱 Emulator (10.0.2.2)
               </button>
               <button type="button" className="m-preset-btn" onClick={() => applyPresetUrl('http://localhost:8000/api/v1')}>
                 🏠 Localhost
@@ -343,21 +342,39 @@ function ScannerScreen() {
   }
 
   async function doLookup(text: string) {
+    const cleanText = text.replace(/\s+/g, ' ').trim();
+    if (!cleanText) return;
     setProcessing(true);
     setResult(null);
-    try {
-      // First try material search by code
-      const searchResp = await mobileApi.get('/materials', { params: { search: text, size: 5 } });
-      const items = searchResp.data?.items || [];
-      if (items.length === 1) {
-        nav(`/mobile/material/${items[0].id}`);
-        return;
+    setError('');
+    let items: any[] = [];
+
+    // 1. If input is short (< 60 chars), check direct materials catalog
+    if (cleanText.length < 60) {
+      try {
+        const searchResp = await mobileApi.get('/materials', { params: { search: cleanText, size: 5 } });
+        items = searchResp.data?.items || [];
+        if (items.length === 1) {
+          nav(`/mobile/material/${items[0].id}`);
+          return;
+        }
+      } catch (e) {
+        console.warn('Direct catalog search skipped or failed:', e);
       }
-      // Otherwise do ERP lookup
-      const lookupResp = await mobileApi.post('/integration/lookup', { material_description: text });
+    }
+
+    // 2. Query AI harmonization & ERP lookup
+    try {
+      const lookupResp = await mobileApi.post('/integration/lookup', { material_description: cleanText.slice(0, 1000) });
       setResult({ type: 'lookup', data: lookupResp.data, searchResults: items });
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Lookup failed. Check server connection.');
+      if (err.code === 'ERR_NETWORK' || !err.response) {
+        setError(`Cannot reach API server at ${getApiBaseUrl()}. Check internet or verify server in Settings.`);
+      } else if (err.response?.status === 502) {
+        setError('Server is starting up (502 Bad Gateway). Please wait 10 seconds and tap Harmonize again.');
+      } else {
+        setError(err.response?.data?.detail || 'Lookup failed. Could not match material.');
+      }
     } finally {
       setProcessing(false);
     }
@@ -403,10 +420,32 @@ function ScannerScreen() {
 
         {scannedText && (
           <div className="m-card">
-            <h3>Captured Text</h3>
-            <code style={{ display: 'block', padding: '8px', background: '#f0f4f2', borderRadius: '6px', fontSize: '13px', wordBreak: 'break-all' }}>
-              {scannedText}
-            </code>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <h3 style={{ margin: 0 }}>Captured Text</h3>
+              <button
+                className="m-btn-primary"
+                style={{ padding: '4px 12px', fontSize: '12px', minHeight: 'auto', marginTop: 0 }}
+                onClick={() => doLookup(scannedText)}
+                disabled={processing || !scannedText.trim()}
+              >
+                {processing ? <><Loader2 size={12} className="spin" /> Harmonizing...</> : '⚡ Harmonize & Match'}
+              </button>
+            </div>
+            <textarea
+              value={scannedText}
+              onChange={(e) => setScannedText(e.target.value)}
+              rows={4}
+              style={{
+                width: '100%',
+                padding: '8px',
+                background: '#f8faf9',
+                borderRadius: '8px',
+                fontSize: '12px',
+                border: '1px solid #d4dfdc',
+                boxSizing: 'border-box',
+                fontFamily: 'monospace',
+              }}
+            />
           </div>
         )}
 
@@ -1039,13 +1078,21 @@ function ProfileScreen() {
           </p>
           <div style={{ display: 'flex', gap: '8px' }}>
             <input
-              placeholder="e.g. http://192.168.1.5:8000/api/v1"
+              placeholder="e.g. https://sih2026-e5wz.onrender.com/api/v1"
               value={apiUrl}
               onChange={(e) => setApiUrl(e.target.value)}
               style={{ flex: 1 }}
             />
             <button className="m-btn-primary" style={{ marginTop: 0, whiteSpace: 'nowrap' }} onClick={saveApiUrl}>
               {saved ? '✓ Saved' : 'Save'}
+            </button>
+          </div>
+          <div className="m-server-presets" style={{ marginTop: '8px' }}>
+            <button type="button" className="m-preset-btn" style={{ background: '#138a72', color: 'white' }} onClick={() => { setApiUrl('https://sih2026-e5wz.onrender.com/api/v1'); localStorage.setItem('sangam_api_url', 'https://sih2026-e5wz.onrender.com/api/v1'); setSaved(true); setTimeout(() => setSaved(false), 2000); }}>
+              ☁️ Set Live Render URL
+            </button>
+            <button type="button" className="m-preset-btn" onClick={() => { setApiUrl('http://192.168.1.193:8000/api/v1'); localStorage.setItem('sangam_api_url', 'http://192.168.1.193:8000/api/v1'); setSaved(true); setTimeout(() => setSaved(false), 2000); }}>
+              💻 PC Wi-Fi
             </button>
           </div>
           <div style={{ marginTop: '8px', fontSize: '11px', color: '#94a3b8' }}>

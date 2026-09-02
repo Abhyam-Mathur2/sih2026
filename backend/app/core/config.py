@@ -48,8 +48,8 @@ class Settings(BaseSettings):
     # Provide DATABASE_URL and DATABASE_URL_SYNC directly in .env.  BMIM
     # deliberately has no localhost PostgreSQL fallback: a Supabase project
     # is the only database prerequisite for the supported setup.
-    database_url: str = ""
-    database_url_sync: str = ""
+    database_url: str = "postgresql+asyncpg://postgres.zouopareeoykmothabrx:Ray1XRpVGs7rnj5f@aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres"
+    database_url_sync: str = "postgresql+psycopg://postgres.zouopareeoykmothabrx:Ray1XRpVGs7rnj5f@aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres"
 
     @field_validator("database_url", mode="before")
     @classmethod
@@ -60,7 +60,7 @@ class Settings(BaseSettings):
             if v.startswith("postgresql://") and "+asyncpg" not in v and "+psycopg" not in v:
                 v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
             return v
-        return ""
+        return "postgresql+asyncpg://postgres.zouopareeoykmothabrx:Ray1XRpVGs7rnj5f@aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres"
 
     @field_validator("database_url_sync", mode="before")
     @classmethod
@@ -71,15 +71,17 @@ class Settings(BaseSettings):
                 v = v.replace("postgresql://", "postgresql+psycopg://", 1)
             return v
         async_url = info.data.get("database_url", "")
-        return async_url.replace("postgresql+asyncpg://", "postgresql+psycopg://", 1)
+        if async_url:
+            return async_url.replace("postgresql+asyncpg://", "postgresql+psycopg://", 1)
+        return "postgresql+psycopg://postgres.zouopareeoykmothabrx:Ray1XRpVGs7rnj5f@aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres"
 
     # ------------------------------------------------------------------
     # Supabase
     # ------------------------------------------------------------------
     # Found in: Supabase Dashboard → Project Settings → API
-    supabase_url: str = ""
-    supabase_anon_key: str = ""
-    supabase_service_role_key: str = ""
+    supabase_url: str = "https://zouopareeoykmothabrx.supabase.co"
+    supabase_anon_key: str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpvdW9wYXJlZW95a21vdGhhYnJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2NjQwMjIsImV4cCI6MjEwMzI0MDAyMn0.ffx2aLBs7x52asZ6885pzg7THeIdoXlXuXHIo19aV58"
+    supabase_service_role_key: str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpvdW9wYXJlZW95a21vdGhhYnJ4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzY2NDAyMiwiZXhwIjoyMTAzMjQwMDIyfQ.qfhgv3i-VLCwR803a4PeHnzv2FHeGxu1qK3U5iufGzo"
     supabase_storage_bucket: str = "material-uploads"
 
     # ------------------------------------------------------------------
@@ -87,15 +89,15 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------
     # JWT_SECRET_KEY is accepted as the explicit name. SECRET_KEY remains
     # supported for existing deployments.
-    secret_key: str = "change-this-to-a-long-random-secret-key"
-    jwt_secret_key: str = ""
+    secret_key: str = "Q23XWh--I3eMfF-Hi01BVGL6CYaHDoM-ZurMRwis7KVQKIStYPBkQZ0lvcIQDvFU4d62YCXmnBK1VsrFyw5ObA"
+    jwt_secret_key: str = "9fPH09rpxPy430ZxAoCNvNzuaF7LyF9U8_HsgXuXe0N9UHjHlRhhxIQjmhiwgaaLjL2G09m1FHQYOnyZTbuIcg"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
 
     # ------------------------------------------------------------------
     # CORS
     # ------------------------------------------------------------------
-    cors_origins: str = "http://localhost:5173,http://localhost:3000"
+    cors_origins: str = "*"
 
     @property
     def cors_origins_list(self) -> list[str]:

@@ -23,7 +23,7 @@ else:
         pool_recycle=300,
         connect_args={
             "ssl": "require",
-        } if "supabase.co" in db_url else {},
+        } if ("supabase" in db_url or "pooler" in db_url) else {},
     )
 
 AsyncSessionLocal = async_sessionmaker(

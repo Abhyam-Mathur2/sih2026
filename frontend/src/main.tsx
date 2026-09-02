@@ -101,7 +101,7 @@ function ToastProvider({ children }: { children: React.ReactNode }) {
 export function getWebApiBaseUrl(): string {
   const saved = localStorage.getItem('sangam_api_url');
   if (saved) return saved;
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+  return import.meta.env.VITE_API_BASE_URL || 'https://sih2026-e5wz.onrender.com/api/v1';
 }
 
 const api = axios.create({ baseURL: getWebApiBaseUrl(), timeout: 35000 });
