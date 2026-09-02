@@ -104,6 +104,20 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('sangam_token');
+      localStorage.removeItem('bmim_token');
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // ---------------------------------------------------------------------------
 // Shell / navigation
 // ---------------------------------------------------------------------------

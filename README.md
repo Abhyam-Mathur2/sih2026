@@ -30,30 +30,67 @@ Central Public Sector Enterprises (CPSEs) in sectors such as Oil & Gas, Power, S
 
 ---
 
-## 🏗️ System Architecture
+## 🔄 End-to-End Backend Architecture & Processing Flowchart
 
-```text
-       ┌─────────────────────────────────────────────────────────┐
-       │                Modern Enterprise Frontend               │
-       │      React 19 + TypeScript + Vite + Recharts + Lucide   │
-       └────────────────────────────┬────────────────────────────┘
-                                    │ REST API / JWT Bearer
-                                    ▼
-       ┌─────────────────────────────────────────────────────────┐
-       │                FastAPI Application Backend              │
-       │   - AI Harmonization Pipeline    - Batch Detection API  │
-       │   - Immutable Audit Logger       - SAP/ERP Adapter      │
-       │   - Live System Trace Telemetry  - NMC Code Generator   │
-       └──────────────┬───────────────────────────┬──────────────┘
-                      │                           │
-                      ▼                           ▼
-       ┌──────────────────────────────┐  ┌────────────────────────┐
-       │     Hybrid AI Engine (CPU)   │  │ Supabase PostgreSQL DB │
-       │ - Sentence-Transformers      │  │ - pgvector Vector Store│
-       │ - RapidFuzz + Jaccard        │  │ - Relational Masters   │
-       │ - Critical Rule Constraints  │  │ - Immutable Audit Logs │
-       └──────────────────────────────┘  └────────────────────────┘
+The following flowchart illustrates the complete lifecycle of material ingestion, normalization, 4-signal hybrid scoring, engineering constraint validation, live telemetry, and automated National Material Code generation:
+
+```mermaid
+flowchart TD
+    subgraph S1 ["1. Ingestion & Normalization"]
+        A1["CPSE Legacy Master Data\n(CSV / SAP ERP Payload)"] --> B1["FastAPI Ingestion Layer\n(/api/v1/uploads)"]
+        B1 --> C1["Description Normalizer\n(Abbreviation Expansion: VLV→VALVE, FLG→FLANGED)"]
+        C1 --> D1["Attribute Extraction Engine\n(Regex Parser: Product Type, Size, Grade, Rating)"]
+        D1 --> E1["Auto-Classification Service\n(Maps to Valves, Pipes, Pumps, Electrical, etc.)"]
+    end
+
+    subgraph S2 ["2. Vectorization & Storage"]
+        E1 --> F1["Sentence-Transformers\nall-MiniLM-L6-v2 (CPU-Optimized)"]
+        F1 --> G1["Dense Vector Embeddings\n(384 Dimensions)"]
+        G1 --> H1[("Supabase PostgreSQL DB\n+ pgvector Extension")]
+    end
+
+    subgraph S3 ["3. 4-Signal Hybrid Matching Engine"]
+        I1["Trigger Match / Batch Detect\n(/api/v1/matches/trigger)"] --> J1["Load Source Material\n+ 384-D Vector"]
+        H1 --> K1["Fetch Candidate Vectors & Attributes\nacross all other CPSEs"]
+        J1 --> L1["Parallel Multi-Signal Scorer"]
+        K1 --> L1
+        
+        L1 --> M1["Signal 1: Dense Vector Cosine Similarity (Weight: 35%)"]
+        L1 --> M2["Signal 2: RapidFuzz Token Sort Alignment (Weight: 20%)"]
+        L1 --> M3["Signal 3: Attribute Jaccard Intersection (Weight: 25%)"]
+        L1 --> M4["Signal 4: Technical Specs & UOM Rules (Weight: 20%)"]
+    end
+
+    subgraph S4 ["4. Engineering Constraint Veto & Classification"]
+        M1 & M2 & M3 & M4 --> N1["Calculate Weighted Composite Score"]
+        N1 --> O1{"Critical Attribute Veto Check\n(Size, Material Grade, Pressure Rating)"}
+        O1 -- "Conflicting Specs\n(e.g., DN50 vs DN100)" --> P1["VETO TRIGGERED: Score Capped < 75%\nDisallowed from IDENTICAL Status"]
+        O1 -- "Specs Compatible" --> Q1["Confidence Score Preserved"]
+        P1 --> R1["Taxonomy Classification Engine"]
+        Q1 --> R1
+        R1 --> S_ID["IDENTICAL (Score >= 95%)"]
+        R1 --> S_ND["NEAR_DUPLICATE (Score 80% - 94.9%)"]
+        R1 --> S_FE["FUNCTIONALLY_EQUIVALENT (Score 60% - 79.9%)"]
+    end
+
+    subgraph S5 ["5. Persistence & Live Observability"]
+        S_ID & S_ND & S_FE --> T1["Atomic Batch Upsert into Supabase (material_matches)"]
+        T1 --> U1["Append Forensic Ledger Event (audit_logs)"]
+        U1 --> V1["Live AI Terminal Telemetry Stream (/api/v1/system/trace-logs)"]
+        V1 --> W1["React Frontend UI\n(Badges, Confidence Bars & Telemetry Dock)"]
+    end
+
+    subgraph S6 ["6. Human Governance & NMC Generation"]
+        W1 --> X1["Technical Reviewer clicks '✓ Approve'"]
+        X1 --> Y1["National Code Service (national_code_service.py)"]
+        Y1 --> Z1["Generate Deterministic National Material Code\n(e.g., NMC-VLV-BALLVALVE-SS316-DN50-0001)"]
+        Z1 --> AA1[("National Material Master\n(national_materials)")]
+        Z1 --> AB1["Create Bi-directional Mapping Links\n(material_mappings)"]
+        AB1 --> AC1["Export to CPSE ERPs\n(SAP S/4HANA, Oracle, Maximo)"]
+    end
 ```
+
+---
 
 ---
 
