@@ -32,6 +32,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             await conn.run_sync(Base.metadata.create_all)
         await seed_data()
         logger.info("Database initialized and ready")
+
+        # Pre-warm embedding model in background thread so first HTTP request is instant
+        try:
+            import asyncio
+            from app.services.embedding_service import get_embedding_model
+            asyncio.create_task(asyncio.to_thread(get_embedding_model))
+        except Exception:
+            pass
     except Exception as exc:
         logger.warning(f"Database initialization notice: {exc}")
     yield

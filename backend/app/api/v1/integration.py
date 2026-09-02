@@ -73,11 +73,16 @@ async def erp_lookup(
     """
     norm_desc = normalize_description(payload.material_description)
     attrs = extract_attributes(payload.material_description)
-    query_emb = generate_embedding(norm_desc) if norm_desc else []
+    query_emb = []
+    try:
+        query_emb = generate_embedding(norm_desc) if norm_desc else []
+    except Exception as e:
+        logger.warning(f"Embedding query skipped: {e}")
 
     # Find best matching NMC by comparing against all national materials
     nmc_result = await db.execute(select(NationalMaterial))
     nmcs = list(nmc_result.scalars().all())
+    nmc_code_map = {n.id: n.national_material_code for n in nmcs}
 
     best_nmc = None
     best_score = 0.0
@@ -105,7 +110,7 @@ async def erp_lookup(
             selectinload(Material.attributes),
             selectinload(Material.embeddings),
         )
-        .limit(200)
+        .limit(100)
     )
     materials = list(mat_result.scalars().all())
 
@@ -123,19 +128,12 @@ async def erp_lookup(
         raw_final = compute_final_score(sem, fuz, att, tec)
         final = apply_critical_vetoes(raw_final, failures)
 
-        if final >= 50.0:
-            # Check if this material has an approved NMC mapping
+        if final >= 40.0:
+            # Check if this material has an approved NMC mapping using in-memory dictionary
             mapped_nmc = None
             for m in mat.mappings:
                 if m.mapping_status == MappingStatus.APPROVED:
-                    nmc_r = await db.execute(
-                        select(NationalMaterial).where(
-                            NationalMaterial.id == m.national_material_id
-                        )
-                    )
-                    nm = nmc_r.scalar_one_or_none()
-                    if nm:
-                        mapped_nmc = nm.national_material_code
+                    mapped_nmc = nmc_code_map.get(m.national_material_id)
                     break
 
             matching_materials.append({
