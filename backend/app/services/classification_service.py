@@ -15,26 +15,47 @@ from app.models.material_category import MaterialCategory
 PRODUCT_TYPE_TO_CATEGORY: dict[str, str] = {
     # Valves
     "BALL_VALVE": "VLV", "GATE_VALVE": "VLV", "GLOBE_VALVE": "VLV",
-    "CHECK_VALVE": "VLV", "BUTTERFLY_VALVE": "VLV",
-    "PRESSURE_RELIEF_VALVE": "VLV", "VALVE": "VLV",
+    "CHECK_VALVE": "VLV", "BUTTERFLY_VALVE": "VLV", "PLUG_VALVE": "VLV",
+    "NEEDLE_VALVE": "VLV", "CONTROL_VALVE": "VLV", "SAFETY_VALVE": "VLV",
+    "PRESSURE_RELIEF_VALVE": "VLV", "DIAPHRAGM_VALVE": "VLV", "VALVE": "VLV",
+
     # Pumps
     "CENTRIFUGAL_PUMP": "PMP", "SUBMERSIBLE_PUMP": "PMP",
-    "PD_PUMP": "PMP", "MULTISTAGE_PUMP": "PMP", "PUMP": "PMP",
-    # Motors / Electrical
-    "ELECTRIC_MOTOR": "MTR", "MOTOR": "MTR",
-    "TRANSFORMER": "ELC", "BREAKER": "ELC", "CABLE": "ELC",
+    "PD_PUMP": "PMP", "MULTISTAGE_PUMP": "PMP", "GEAR_PUMP": "PMP",
+    "DIAPHRAGM_PUMP": "PMP", "PUMP": "PMP",
+
+    # Motors
+    "ELECTRIC_MOTOR": "MTR", "INDUCTION_MOTOR": "MTR", "MOTOR": "MTR",
+
+    # Electrical Components
+    "TRANSFORMER": "ELC", "CIRCUIT_BREAKER": "ELC", "BREAKER": "ELC",
+    "SWITCH": "ELC", "CABLE": "ELC", "CONTACTOR": "ELC", "RELAY": "ELC",
+
     # Bearings
     "BALL_BEARING": "BRG", "ROLLER_BEARING": "BRG",
-    "TAPERED_ROLLER_BEARING": "BRG", "SPHERICAL_BEARING": "BRG", "BEARING": "BRG",
+    "TAPERED_ROLLER_BEARING": "BRG", "SPHERICAL_BEARING": "BRG",
+    "THRUST_BEARING": "BRG", "DEEP_GROOVE_BEARING": "BRG", "BEARING": "BRG",
+
     # Fasteners
-    "BOLT": "FST", "NUT": "FST", "WASHER": "FST", "SCREW": "FST",
+    "SOCKET_HEAD_BOLT": "FST", "HEX_BOLT": "FST", "STUD_BOLT": "FST",
+    "STUD": "FST", "BOLT": "FST", "HEX_NUT": "FST", "LOCK_NUT": "FST",
+    "NUT": "FST", "LOCK_WASHER": "FST", "SPRING_WASHER": "FST",
+    "FLAT_WASHER": "FST", "WASHER": "FST", "SCREW": "FST",
+
     # Gaskets & Seals
-    "GASKET": "GSK", "SEAL": "GSK", "O_RING": "GSK",
+    "SPIRAL_WOUND_GASKET": "GSK", "GASKET": "GSK", "MECHANICAL_SEAL": "GSK",
+    "OIL_SEAL": "GSK", "O_RING": "GSK", "SEAL": "GSK", "PACKING": "GSK",
+
     # Instruments
-    "PRESSURE_GAUGE": "INS", "TEMP_TRANSMITTER": "INS",
-    "FLOW_METER": "INS", "GAUGE": "INS", "TRANSMITTER": "INS",
-    # Pipes & Tubes
-    "TUBE": "PIP", "PIPE": "PIP",
+    "PRESSURE_GAUGE": "INS", "TEMP_GAUGE": "INS", "GAUGE": "INS",
+    "PRESSURE_TRANSMITTER": "INS", "TEMP_TRANSMITTER": "INS",
+    "FLOW_TRANSMITTER": "INS", "LEVEL_TRANSMITTER": "INS",
+    "FLOW_METER": "INS", "THERMOCOUPLE": "INS", "RTD": "INS",
+    "TRANSMITTER": "INS",
+
+    # Pipes, Tubes, Flanges & Plates
+    "PIPE": "PIP", "TUBE": "PIP", "FLANGE": "PIP", "ELBOW": "PIP",
+    "TEE": "PIP", "REDUCER": "PIP", "PLATE": "PIP", "SHEET": "PIP",
 }
 
 # Cache: code → id (populated lazily per session)

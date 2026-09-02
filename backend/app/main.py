@@ -22,6 +22,18 @@ logging.basicConfig(level=logging.INFO)
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Startup actions
     logger.info("Starting SANGAM backend app", env=settings.environment, debug=settings.debug)
+    try:
+        from app.db.base import Base
+        from app.db.session import engine
+        from app.db.seed import seed_data
+        import app.models  # register all models
+
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        await seed_data()
+        logger.info("Database initialized and ready")
+    except Exception as exc:
+        logger.warning(f"Database initialization notice: {exc}")
     yield
     # Shutdown actions
     logger.info("Stopping SANGAM backend app")

@@ -23,7 +23,17 @@ from app.models.material import Material
 from app.models.material_mapping import MaterialMapping, MappingStatus
 from app.models.national_material import NationalMaterial
 from app.models.user import User
-from app.services.matching_engine import fuzzy_score, attribute_score
+from app.services.embedding_service import generate_embedding
+from app.services.matching_engine import (
+    apply_critical_vetoes,
+    attribute_score,
+    compute_final_score,
+    fuzzy_score,
+    semantic_score,
+    technical_score,
+    validate_critical_attributes,
+)
+from app.models.material_embedding import MaterialEmbedding
 
 router = APIRouter()
 
@@ -63,6 +73,7 @@ async def erp_lookup(
     """
     norm_desc = normalize_description(payload.material_description)
     attrs = extract_attributes(payload.material_description)
+    query_emb = generate_embedding(norm_desc) if norm_desc else []
 
     # Find best matching NMC by comparing against all national materials
     nmc_result = await db.execute(select(NationalMaterial))
@@ -72,30 +83,48 @@ async def erp_lookup(
     best_score = 0.0
 
     for nmc in nmcs:
-        fuz = fuzzy_score(norm_desc, nmc.standard_description)
-        nmc_attrs = nmc.standard_attributes or {}
+        nmc_norm = normalize_description(nmc.standard_description)
+        fuz = fuzzy_score(norm_desc, nmc_norm)
+        nmc_attrs = nmc.standard_attributes or extract_attributes(nmc.standard_description)
         att = attribute_score(attrs, nmc_attrs)
-        combined = 0.6 * fuz + 0.4 * att
-        if combined > best_score:
-            best_score = combined
+        rule_score, failures = validate_critical_attributes(attrs, nmc_attrs)
+        
+        # Approximate semantic with fuzzy/att for NMC standard descriptions or direct comparison
+        combined = compute_final_score(fuz, fuz, att, rule_score)
+        final_nmc_score = apply_critical_vetoes(combined, failures)
+
+        if final_nmc_score > best_score:
+            best_score = final_nmc_score
             best_nmc = nmc
 
-    # Also find existing materials that match
+    # Also find existing materials that match using multi-signal scoring
     mat_result = await db.execute(
         select(Material)
-        .options(selectinload(Material.mappings))
+        .options(
+            selectinload(Material.mappings),
+            selectinload(Material.attributes),
+            selectinload(Material.embeddings),
+        )
         .limit(200)
     )
     materials = list(mat_result.scalars().all())
 
     matching_materials = []
     for mat in materials:
-        fuz = fuzzy_score(
-            norm_desc,
-            mat.normalized_description or mat.original_description,
-        )
-        if fuz >= 60.0:
-            # Check if this material has an NMC mapping
+        mat_norm = mat.normalized_description or normalize_description(mat.original_description)
+        cand_attrs = {a.attribute_name: a.attribute_value for a in mat.attributes}
+        cand_emb = list(mat.embeddings[0].embedding) if mat.embeddings else []
+
+        sem = semantic_score(query_emb, cand_emb) if query_emb and cand_emb else fuzzy_score(norm_desc, mat_norm)
+        fuz = fuzzy_score(norm_desc, mat_norm)
+        att = attribute_score(attrs, cand_attrs)
+        rule_score, failures = validate_critical_attributes(attrs, cand_attrs)
+        tec = (technical_score(payload.model_dump(), mat) + rule_score) / 2
+        raw_final = compute_final_score(sem, fuz, att, tec)
+        final = apply_critical_vetoes(raw_final, failures)
+
+        if final >= 50.0:
+            # Check if this material has an approved NMC mapping
             mapped_nmc = None
             for m in mat.mappings:
                 if m.mapping_status == MappingStatus.APPROVED:
@@ -113,7 +142,7 @@ async def erp_lookup(
                 "material_id": mat.id,
                 "legacy_code": mat.legacy_material_code,
                 "description": mat.original_description,
-                "similarity": round(fuz, 1),
+                "similarity": round(final, 1),
                 "national_material_code": mapped_nmc,
             })
 

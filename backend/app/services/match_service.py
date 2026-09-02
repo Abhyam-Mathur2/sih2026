@@ -26,6 +26,7 @@ from app.models.material_mapping import MaterialMapping, MappingStatus
 from app.models.national_material import NationalMaterial, NationalMaterialStatus
 from app.models.user import User
 from app.services.matching_engine import (
+    apply_critical_vetoes,
     attribute_score,
     build_explanation,
     classify_match,
@@ -296,10 +297,8 @@ async def trigger_matching_for_material(
         att = attribute_score(source_attrs, cand_attrs)
         rule_score, failures = validate_critical_attributes(source_attrs, cand_attrs)
         tec = (technical_score(source, cand) + rule_score) / 2
-        final = compute_final_score(sem, fuz, att, tec)
-        # A contradictory critical specification can never be an identical match.
-        if failures:
-            final = min(final, settings.threshold_near_duplicate - 0.01)
+        raw_final = compute_final_score(sem, fuz, att, tec)
+        final = apply_critical_vetoes(raw_final, failures)
         explanation = build_explanation(sem, fuz, att, tec, final)
         explanation["critical_attribute_failures"] = failures
         explanation["technical_validation"] = "FAILED" if failures else "PASSED"

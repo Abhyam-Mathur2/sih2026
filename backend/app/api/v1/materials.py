@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, require_cpse_manager
@@ -68,13 +68,14 @@ async def update_material(
     return MaterialRead.model_validate(mat)
 
 
-@router.delete("/{material_id}", status_code=204, summary="Delete a material")
+@router.delete("/{material_id}", status_code=204, response_class=Response, summary="Delete a material")
 async def delete_material(
     material_id: int,
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_cpse_manager),
-) -> None:
+) -> Response:
     await material_service.delete_material(db, material_id)
+    return Response(status_code=204)
 
 @router.post("/{material_id}/find-matches", response_model=list[MatchRead], summary="Run local hybrid AI matching")
 async def find_matches(material_id: int, db: AsyncSession = Depends(get_db), _: User = Depends(require_cpse_manager)) -> list[MatchRead]:

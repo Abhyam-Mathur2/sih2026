@@ -2,23 +2,27 @@ from __future__ import annotations
 
 import enum
 from datetime import datetime
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text, func
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text, func, JSON
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
+if TYPE_CHECKING:
+    from app.models.material_category import MaterialCategory
+    from app.models.material_mapping import MaterialMapping
+
 
 class NationalMaterialStatus(str, enum.Enum):
-    DRAFT = "DRAFT"
     ACTIVE = "ACTIVE"
     DEPRECATED = "DEPRECATED"
+    MERGED = "MERGED"
 
 
 class NationalMaterial(Base):
-    """Unified National Material Code entry – the master record."""
+    """Canonical Golden Record with standard engineering specifications."""
 
     __tablename__ = "national_materials"
 
@@ -27,10 +31,12 @@ class NationalMaterial(Base):
         String(100), unique=True, nullable=False, index=True
     )
     standard_description: Mapped[str] = mapped_column(Text, nullable=False)
-    category_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("material_categories.id"), nullable=True, index=True
+    category_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("material_categories.id"), nullable=False, index=True
     )
-    standard_attributes: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    standard_attributes: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql"), nullable=True
+    )
     status: Mapped[NationalMaterialStatus] = mapped_column(
         Enum(NationalMaterialStatus, name="nationalmaterialstatus"),
         nullable=False,

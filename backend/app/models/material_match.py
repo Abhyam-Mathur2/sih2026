@@ -4,7 +4,7 @@ import enum
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, String, func
+from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, String, func, JSON
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -59,7 +59,9 @@ class MaterialMatch(Base):
     )
 
     # Explainability JSON
-    explanation: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    explanation: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql"), nullable=True
+    )
 
     # Reviewer info
     reviewed_by: Mapped[int | None] = mapped_column(

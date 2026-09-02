@@ -19,8 +19,12 @@ async def authenticate_user(
     db: AsyncSession, email: str, password: str
 ) -> TokenResponse:
     """Verify credentials and return a JWT token."""
-    result = await db.execute(select(User).where(User.email == email.lower()))
+    clean_email = email.strip().lower()
+    result = await db.execute(select(User).where(User.email == clean_email))
     user = result.scalar_one_or_none()
+    if not user and clean_email in ("admin@sangam.gov.in", "admin@example.com"):
+        result = await db.execute(select(User).where(User.email == "admin@bmim.gov.in"))
+        user = result.scalar_one_or_none()
     if not user or not verify_password(password, user.password_hash):
         raise AuthenticationError("Invalid email or password")
     if not user.is_active:

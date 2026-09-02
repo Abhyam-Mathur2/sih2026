@@ -6,40 +6,25 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.core.config import settings
 
-if not settings.database_url:
-    raise RuntimeError(
-        "DATABASE_URL is required. Configure backend/.env with the Supabase "
-        "PostgreSQL connection string before starting BMIM."
-    )
+db_url = settings.database_url or "sqlite+aiosqlite:///./sangam.db"
 
-# ------------------------------------------------------------------
-# Engine configuration tuned for Supabase (cloud PostgreSQL).
-#
-# pool_size / max_overflow:
-#   Supabase free tier allows ~20 simultaneous direct connections.
-#   Keep pool small to stay well within limits.
-#
-# pool_pre_ping=True:
-#   Validates connections before use; important for cloud DBs where
-#   idle connections may be dropped by firewalls/proxies.
-#
-# pool_recycle=300:
-#   Recycle connections every 5 minutes to avoid stale connections.
-# ------------------------------------------------------------------
-engine = create_async_engine(
-    settings.database_url,
-    echo=settings.debug,
-    pool_pre_ping=True,
-    pool_size=5,
-    max_overflow=10,
-    pool_recycle=300,
-    connect_args={
-        # Supabase requires SSL; asyncpg handles it automatically for
-        # supabase.co hosts. Explicit ssl="require" ensures it works
-        # even when the URL doesn't include sslmode.
-        "ssl": "require",
-    } if "supabase.co" in settings.database_url else {},
-)
+if db_url.startswith("sqlite"):
+    engine = create_async_engine(
+        db_url,
+        echo=False,
+    )
+else:
+    engine = create_async_engine(
+        db_url,
+        echo=settings.debug,
+        pool_pre_ping=True,
+        pool_size=5,
+        max_overflow=10,
+        pool_recycle=300,
+        connect_args={
+            "ssl": "require",
+        } if "supabase.co" in db_url else {},
+    )
 
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,
