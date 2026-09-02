@@ -73,11 +73,6 @@ async def erp_lookup(
     """
     norm_desc = normalize_description(payload.material_description)
     attrs = extract_attributes(payload.material_description)
-    query_emb = []
-    try:
-        query_emb = generate_embedding(norm_desc) if norm_desc else []
-    except Exception as e:
-        logger.warning(f"Embedding query skipped: {e}")
 
     # Find best matching NMC by comparing against all national materials
     nmc_result = await db.execute(select(NationalMaterial))
@@ -102,15 +97,14 @@ async def erp_lookup(
             best_score = final_nmc_score
             best_nmc = nmc
 
-    # Also find existing materials that match using multi-signal scoring
+    # Also find existing materials that match using multi-signal scoring (fast candidate pool)
     mat_result = await db.execute(
         select(Material)
         .options(
             selectinload(Material.mappings),
             selectinload(Material.attributes),
-            selectinload(Material.embeddings),
         )
-        .limit(100)
+        .limit(30)
     )
     materials = list(mat_result.scalars().all())
 
@@ -118,9 +112,8 @@ async def erp_lookup(
     for mat in materials:
         mat_norm = mat.normalized_description or normalize_description(mat.original_description)
         cand_attrs = {a.attribute_name: a.attribute_value for a in mat.attributes}
-        cand_emb = list(mat.embeddings[0].embedding) if mat.embeddings else []
 
-        sem = semantic_score(query_emb, cand_emb) if query_emb and cand_emb else fuzzy_score(norm_desc, mat_norm)
+        sem = fuzzy_score(norm_desc, mat_norm)
         fuz = fuzzy_score(norm_desc, mat_norm)
         att = attribute_score(attrs, cand_attrs)
         rule_score, failures = validate_critical_attributes(attrs, cand_attrs)
