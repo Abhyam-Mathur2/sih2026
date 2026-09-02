@@ -1,0 +1,233 @@
+/* ============================================================ */
+/* SANGAM Mobile App — Styles                                    */
+/* ============================================================ */
+
+/* === Mobile Shell & Tab Bar === */
+.m-shell {
+  display: flex; flex-direction: column; min-height: 100vh;
+  background: #f5f7f6; overflow-x: hidden;
+}
+.m-content {
+  flex: 1; overflow-y: auto; padding-bottom: 80px;
+}
+.m-tabs {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 900;
+  display: flex; background: white;
+  border-top: 1px solid #e0e9e6; padding: 6px 0 env(safe-area-inset-bottom, 4px);
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.06);
+}
+.m-tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 8px 4px; text-decoration: none;
+  color: #94a3b8; font-size: 10px; font-weight: 600; transition: color 0.15s;
+}
+.m-tab-active { color: #138a72; }
+.m-tab svg { transition: transform 0.15s; }
+.m-tab-active svg { transform: scale(1.1); }
+
+/* === Mobile Header === */
+.m-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 16px 16px 12px; background: linear-gradient(135deg, #0d352f 0%, #164a42 100%);
+  color: white; position: sticky; top: 0; z-index: 100;
+}
+.m-back-btn {
+  background: rgba(255,255,255,0.12); color: white; padding: 8px;
+  border-radius: 8px; min-height: 36px;
+}
+.m-back-btn:hover { background: rgba(255,255,255,0.2); transform: none; }
+.m-header-content { flex: 1; }
+.m-header-eyebrow { font-size: 9px; letter-spacing: 1.2px; text-transform: uppercase; color: #7fb8aa; font-weight: 700; }
+.m-header-title { font: 600 20px 'Source Serif 4', serif; margin: 2px 0 0; }
+
+/* === Mobile Page === */
+.m-page { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+/* === Mobile Card === */
+.m-card {
+  background: white; border: 1px solid #e0e9e6; border-radius: 12px;
+  padding: 16px; box-shadow: 0 1px 4px rgba(24,51,46,0.04);
+}
+.m-card h3 {
+  font: 600 15px 'Source Serif 4', serif; margin: 0 0 10px; color: #18332e;
+}
+
+/* === Mobile Field === */
+.m-field { margin-bottom: 10px; }
+.m-field label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;
+  color: #607872; display: block; margin-bottom: 3px;
+}
+.m-field p { margin: 0; font-size: 14px; color: #18332e; }
+
+/* === Mobile Chips === */
+.m-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.m-chip {
+  padding: 4px 10px; background: #e2f3ed; color: #08705b;
+  border-radius: 16px; font-size: 11px; font-weight: 600;
+}
+
+/* === Mobile Buttons === */
+.m-btn-primary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  background: #138a72; color: white; border: none; border-radius: 10px;
+  padding: 12px 20px; font-weight: 700; font-size: 14px;
+  margin-top: 8px; cursor: pointer; transition: all 0.15s;
+  min-height: 44px;
+}
+.m-btn-primary:hover { background: #0f7563; }
+.m-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.m-btn-full { width: 100%; }
+.m-btn-danger {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  background: #fce8e6; color: #c5221f; border: 1px solid #f8d4d1;
+  border-radius: 10px; padding: 12px 20px; font-weight: 700; font-size: 14px;
+  min-height: 44px; width: 100%; cursor: pointer; transition: all 0.15s;
+}
+.m-btn-danger:hover { background: #f8d4d1; }
+
+/* === Mobile Alerts === */
+.m-alert {
+  display: flex; align-items: flex-start; gap: 8px; padding: 12px 16px;
+  border-radius: 10px; font-size: 13px; line-height: 1.4;
+}
+.m-alert-info { background: #e2f3ed; color: #08705b; border: 1px solid #b5e0d4; }
+.m-alert-error { background: #fce8e6; color: #c5221f; border: 1px solid #f8d4d1; }
+
+/* === Mobile Loading === */
+.m-loading {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 40px 20px; color: #607872; font-size: 14px;
+}
+
+/* === Mobile Empty State === */
+.m-empty {
+  text-align: center; padding: 40px 20px; color: #94a3b8;
+  font-size: 14px;
+}
+
+/* === Scanner === */
+.m-scan-hero {
+  background: linear-gradient(135deg, #0d352f 0%, #164a42 100%);
+  border-radius: 16px; padding: 24px; text-align: center;
+}
+.m-scan-hint { color: #b8d4cc; font-size: 13px; margin: 0 0 16px; }
+.m-scan-actions { display: flex; gap: 10px; }
+.m-scan-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 12px; padding: 20px 12px; font-size: 12px; font-weight: 600;
+  transition: all 0.15s; min-height: 44px;
+}
+.m-scan-btn:hover { background: rgba(255,255,255,0.18); transform: none; }
+.m-scan-btn:disabled { opacity: 0.5; }
+.m-scan-btn-alt { background: rgba(19,138,114,0.3); border-color: rgba(19,138,114,0.5); }
+
+/* === Match Cards === */
+.m-match-card {
+  position: relative; padding: 14px 36px 14px 14px;
+  border: 1px solid #e0e9e6; border-radius: 10px; margin-bottom: 8px;
+  cursor: pointer; transition: background 0.15s; background: white;
+}
+.m-match-card:hover { background: #f8fbfa; }
+.m-match-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.m-match-card p { font-size: 13px; color: #607872; margin: 4px 0 0; }
+.m-match-card small { font-size: 11px; color: #94a3b8; }
+.m-match-arrow { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #cbd8d4; }
+
+/* === NMC Banner === */
+.m-nmc-banner {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: 12px 16px; background: linear-gradient(90deg, #e2f3ed, #d4f0e8);
+  border: 1px solid #b5e0d4; border-radius: 10px; margin: 10px 0;
+  font-size: 13px; color: #0b6b55;
+}
+
+/* === Why Matched Panel === */
+.m-why-matched { background: #fafcfb; }
+.m-signal-row {
+  display: flex; align-items: center; gap: 10px; padding: 8px 0;
+  border-bottom: 1px solid #e8eeeb;
+}
+.m-signal-row:last-of-type { border-bottom: none; }
+.m-signal-icon { flex-shrink: 0; }
+.m-signal-info { flex: 1; }
+.m-signal-name { font-size: 12px; font-weight: 600; color: #18332e; margin-bottom: 4px; }
+.m-signal-score { font-size: 14px; font-weight: 700; color: #138a72; flex-shrink: 0; min-width: 48px; text-align: right; }
+
+/* === Inventory Row === */
+.m-inv-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px; border-radius: 8px; margin-bottom: 4px;
+  background: #f8faf9; font-size: 13px;
+}
+.m-inv-row strong { color: #138a72; }
+
+/* === Form Labels === */
+.m-form-label {
+  display: block; margin-bottom: 14px; font-size: 13px; font-weight: 600; color: #18332e;
+}
+.m-form-label input, .m-form-label select, .m-form-label textarea {
+  display: block; margin-top: 6px; width: 100%; font-size: 16px;
+  padding: 12px; min-height: 44px;
+}
+
+/* === Search Input === */
+.m-search-input {
+  font-size: 16px !important; padding: 14px 16px !important; min-height: 48px;
+  border-radius: 12px !important; border: 2px solid #e0e9e6 !important;
+  background: white !important;
+}
+.m-search-input:focus { border-color: #138a72 !important; }
+
+/* === Mobile Login === */
+.m-login {
+  min-height: 100vh; display: grid; place-items: center;
+  background: linear-gradient(135deg, #0d352f 0%, #103c35 30%, #164a42 70%, #1a6758 100%);
+  padding: 20px;
+}
+.m-login form {
+  width: 100%; max-width: 400px; padding: 32px 24px;
+  background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.m-login-brand { text-align: center; margin-bottom: 24px; }
+.m-login-icon { font-size: 48px; margin-bottom: 8px; }
+.m-login-brand h1 { font: 700 28px 'Source Serif 4', serif; color: #18332e; margin: 0; }
+.m-login-brand p { font-size: 12px; color: #138a72; font-weight: 600; margin: 4px 0 0; }
+.m-login label { display: block; margin: 14px 0 0; font-size: 13px; font-weight: 600; color: #18332e; }
+.m-login input { display: block; margin-top: 6px; width: 100%; font-size: 16px; padding: 12px; min-height: 44px; }
+.m-error { color: #c5221f; font-size: 13px; margin: 10px 0 0; font-weight: 600; line-height: 1.4; }
+
+/* === Quick Demo Pills & Server Config === */
+.m-quick-roles {
+  display: flex; gap: 6px; margin: 12px 0; flex-wrap: wrap;
+}
+.m-role-chip {
+  background: #f0f7f4; border: 1px solid #cbe5dc; color: #138a72;
+  border-radius: 20px; font-size: 11px; font-weight: 600;
+  padding: 4px 10px; cursor: pointer; transition: all 0.15s;
+}
+.m-role-chip:hover { background: #138a72; color: white; }
+
+.m-server-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 16px; padding: 10px 12px; background: #f8faf9;
+  border: 1px solid #e0e9e6; border-radius: 8px; font-size: 12px;
+  color: #334e48; cursor: pointer;
+}
+.m-server-box {
+  margin-top: 10px; padding: 12px; background: #f0f4f3;
+  border-radius: 8px; border: 1px solid #d4dfdc;
+}
+.m-server-box label { font-size: 11px; font-weight: 700; color: #18332e; margin-bottom: 4px; }
+.m-server-presets { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.m-preset-btn {
+  font-size: 10px; font-weight: 600; background: white;
+  border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px;
+  cursor: pointer; color: #334155;
+}
+.m-preset-btn:hover { background: #e2e8f0; }
+
+/* === Task Card === */
+.m-task-card { border-left: 4px solid #fef3cd; }
+

@@ -193,3 +193,31 @@ async def export_mappings(
         }
         for m in mappings
     ]
+
+
+@router.get(
+    "/simulated-inventory/{national_material_code}",
+    summary="Fetch simulated cross-CPSE warehouse inventory for demo showcase",
+)
+async def get_simulated_inventory(
+    national_material_code: str,
+    _: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    """
+    Returns demonstration inventory levels across CPSE stores for a given NMC.
+    Always annotated with simulated=True.
+    """
+    sample_stock = [
+        {"cpse": "CPCL", "plant": "Chennai Main Store", "qty": 14, "uom": "EA", "status": "AVAILABLE"},
+        {"cpse": "IOCL", "plant": "Panipat Refinery Yard", "qty": 8, "uom": "EA", "status": "AVAILABLE"},
+        {"cpse": "SAIL", "plant": "Bhilai Steel Depot", "qty": 4, "uom": "EA", "status": "RESERVED"},
+        {"cpse": "BHEL", "plant": "Bhopal Heavy Electricals Store", "qty": 10, "uom": "EA", "status": "AVAILABLE"},
+    ]
+    return {
+        "national_material_code": national_material_code,
+        "simulated": True,
+        "disclaimer": "Simulated demonstration data — not connected to live CPSE ERP stock levels.",
+        "stores": sample_stock,
+        "total_available": sum(s["qty"] for s in sample_stock if s["status"] == "AVAILABLE"),
+    }
+

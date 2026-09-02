@@ -23,10 +23,14 @@ import {
   Play,
   Pause,
   Copy,
+  Menu,
+  Smartphone,
 } from 'lucide-react';
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Legend } from 'recharts';
 import logoImg from './assets/logo.png';
 import './styles.css';
+import { MobileApp, isNativeMobile } from './mobile';
+
 
 // ---------------------------------------------------------------------------
 // Toast Notification Context & Hook
@@ -123,6 +127,7 @@ api.interceptors.response.use(
 // ---------------------------------------------------------------------------
 function Shell({ title, children }: { title: string; children: React.ReactNode }) {
   const location = useLocation();
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const nav = [
     { p: '/', icon: LayoutDashboard, n: 'Dashboard' },
     { p: '/materials', icon: Database, n: 'Materials' },
@@ -132,11 +137,21 @@ function Shell({ title, children }: { title: string; children: React.ReactNode }
     { p: '/audit', icon: Shield, n: 'Audit Trail' },
     { p: '/integration', icon: Plug, n: 'SAP/ERP Integration' },
     { p: '/terminal', icon: Terminal, n: 'Live AI Terminal' },
+    { p: '/mobile/scan', icon: Smartphone, n: 'Mobile App View' },
   ];
+
+  // Close drawer on route change
+  useEffect(() => { setDrawerOpen(false); }, [location.pathname]);
 
   return (
     <div className="shell">
-      <aside>
+      {/* Hamburger button — visible only on mobile via CSS */}
+      <button className="hamburger-btn" onClick={() => setDrawerOpen(!drawerOpen)} aria-label="Menu">
+        {drawerOpen ? <X size={20} /> : <Menu size={20} />}
+      </button>
+      {/* Drawer overlay */}
+      {drawerOpen && <div className="drawer-overlay open" onClick={() => setDrawerOpen(false)} />}
+      <aside className={drawerOpen ? 'drawer-open' : ''}>
         <div className="brand">
           <img src={logoImg} alt="SANGAM" className="brand-logo" />
           <div>
@@ -145,7 +160,7 @@ function Shell({ title, children }: { title: string; children: React.ReactNode }
           </div>
         </div>
         {nav.map(({ p, icon: Icon, n }) => (
-          <Link to={p} key={p} className={location.pathname === p ? 'active' : ''}>
+          <Link to={p} key={p} className={location.pathname === p ? 'active' : ''} onClick={() => setDrawerOpen(false)}>
             <Icon size={18} /> {n}
           </Link>
         ))}
@@ -205,9 +220,14 @@ function Login() {
       localStorage.setItem('bmim_token', data.access_token);
       showToast('Welcome to SANGAM', 'Signed in successfully as Administrator.', 'success');
       nav('/');
-    } catch {
-      setError('Invalid email or password');
-      showToast('Authentication Error', 'Invalid credentials. Please verify your email and password.', 'error');
+    } catch (err: any) {
+      if (err.code === 'ERR_NETWORK' || !err.response) {
+        setError(`Cannot reach API server at ${API_BASE_URL}. Ensure FastAPI backend is running.`);
+        showToast('Network Error', `Cannot connect to API server at ${API_BASE_URL}`, 'error');
+      } else {
+        setError('Invalid email or password');
+        showToast('Authentication Error', 'Invalid credentials. Please verify your email and password.', 'error');
+      }
     } finally {
       setLoading(false);
     }
@@ -439,18 +459,18 @@ function Materials() {
             ) : (
               data?.items.map((m: any) => (
                 <tr key={m.id}>
-                  <td>
+                  <td data-label="Code">
                     <code>{m.legacy_material_code}</code>
                   </td>
-                  <td>
+                  <td data-label="CPSE">
                     <span className="cpse-tag">{cpseMap[m.cpse_id] || `CPSE-${m.cpse_id}`}</span>
                   </td>
-                  <td>{m.original_description}</td>
-                  <td>{m.normalized_description || m.original_description}</td>
-                  <td>
+                  <td data-label="Description">{m.original_description}</td>
+                  <td data-label="Normalized">{m.normalized_description || m.original_description}</td>
+                  <td data-label="Status">
                     <span className="badge">{m.status}</span>
                   </td>
-                  <td>
+                  <td data-label="Actions">
                     <button
                       disabled={matchingId !== null}
                       onClick={async () => {
@@ -601,21 +621,21 @@ function Matches() {
             ) : data?.items && data.items.length > 0 ? (
               data.items.map((m: any) => (
                 <tr key={m.id}>
-                  <td>
+                  <td data-label="Source">
                     <div>
                       <span className="cpse-tag">{cpseMap[m.source_material?.cpse_id] || `CPSE-${m.source_material?.cpse_id}`}</span>
                       <code>{m.source_material?.legacy_material_code}</code>
                     </div>
                     <div className="desc-small">{m.source_material?.original_description?.slice(0, 60)}</div>
                   </td>
-                  <td>
+                  <td data-label="Candidate">
                     <div>
                       <span className="cpse-tag">{cpseMap[m.candidate_material?.cpse_id] || `CPSE-${m.candidate_material?.cpse_id}`}</span>
                       <code>{m.candidate_material?.legacy_material_code}</code>
                     </div>
                     <div className="desc-small">{m.candidate_material?.original_description?.slice(0, 60)}</div>
                   </td>
-                  <td>
+                  <td data-label="Type">
                     <span
                       className={`badge ${
                         m.match_type === 'IDENTICAL'
@@ -628,17 +648,17 @@ function Matches() {
                       {m.match_type?.replace(/_/g, ' ')}
                     </span>
                   </td>
-                  <td>
+                  <td data-label="Confidence">
                     <strong>{m.final_score.toFixed(1)}%</strong>
                     <div className="score-bar">
                       <div className="score-fill" style={{ width: `${m.final_score}%` }} />
                     </div>
                   </td>
-                  <td style={{ fontFamily: 'monospace', fontSize: '11px' }}>
+                  <td data-label="Scores" style={{ fontFamily: 'monospace', fontSize: '11px' }}>
                     Sem: {m.semantic_score.toFixed(0)}% | Fuz: {m.fuzzy_score.toFixed(0)}% | Att:{' '}
                     {m.attribute_score.toFixed(0)}% | Tech: {m.technical_score.toFixed(0)}%
                   </td>
-                  <td>
+                  <td data-label="Status">
                     <span
                       className={`badge ${
                         m.status === 'APPROVED' ? 'badge-green' : m.status === 'REJECTED' ? 'badge-red' : ''
@@ -647,7 +667,7 @@ function Matches() {
                       {m.status}
                     </span>
                   </td>
-                  <td>
+                  <td data-label="Action">
                     {m.status === 'PENDING' && (
                       <div style={{ display: 'flex', gap: '6px' }}>
                         <button
@@ -829,18 +849,18 @@ function National() {
             ) : data && data.length > 0 ? (
               data.map((n: any) => (
                 <tr key={n.id}>
-                  <td>
+                  <td data-label="NMC">
                     <code>{n.national_material_code}</code>
                   </td>
-                  <td>{n.standard_description}</td>
-                  <td style={{ fontSize: '11px', fontFamily: 'monospace' }}>
+                  <td data-label="Description">{n.standard_description}</td>
+                  <td data-label="Attributes" style={{ fontSize: '11px', fontFamily: 'monospace' }}>
                     {n.standard_attributes
                       ? Object.entries(n.standard_attributes)
                           .map(([k, v]) => `${k}:${v}`)
                           .join(' | ')
                       : '—'}
                   </td>
-                  <td>
+                  <td data-label="Status">
                     <span className="badge badge-green">{n.status}</span>
                   </td>
                 </tr>
@@ -937,19 +957,19 @@ function AuditTrail() {
             ) : data && data.length > 0 ? (
               data.map((log: any) => (
                 <tr key={log.id}>
-                  <td style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>
+                  <td data-label="Timestamp" style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>
                     {new Date(log.created_at).toLocaleString()}
                   </td>
-                  <td>
+                  <td data-label="Action">
                     <span className="badge">{log.action?.replace(/_/g, ' ')}</span>
                   </td>
-                  <td>
+                  <td data-label="Entity">
                     <code>
                       {log.entity_type}#{log.entity_id}
                     </code>
                   </td>
-                  <td>{log.user_id ? `User #${log.user_id}` : 'System'}</td>
-                  <td style={{ fontSize: '11px', fontFamily: 'monospace', maxWidth: '300px', overflow: 'hidden' }}>
+                  <td data-label="User">{log.user_id ? `User #${log.user_id}` : 'System'}</td>
+                  <td data-label="Details" style={{ fontSize: '11px', fontFamily: 'monospace', maxWidth: '300px', overflow: 'hidden' }}>
                     {log.new_value ? JSON.stringify(log.new_value).slice(0, 120) : '—'}
                   </td>
                 </tr>
@@ -1064,14 +1084,14 @@ function IntegrationPage() {
                 <tbody>
                   {result.matching_materials.map((m: any, i: number) => (
                     <tr key={i}>
-                      <td>
+                      <td data-label="Code">
                         <code>{m.legacy_code}</code>
                       </td>
-                      <td>{m.description}</td>
-                      <td>
+                      <td data-label="Description">{m.description}</td>
+                      <td data-label="Similarity">
                         <strong>{m.similarity}%</strong>
                       </td>
-                      <td>{m.national_material_code || '—'}</td>
+                      <td data-label="NMC">{m.national_material_code || '—'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1208,8 +1228,16 @@ const client = new QueryClient({
 });
 
 function App() {
+  const location = useLocation();
+
+  // If inside Capacitor Android container and on root web page, auto-route to native mobile scan screen
+  if (isNativeMobile() && !location.pathname.startsWith('/mobile')) {
+    return <Navigate to="/mobile/scan" replace />;
+  }
+
   return (
     <Routes>
+      <Route path="/mobile/*" element={<MobileApp />} />
       <Route path="/login" element={<Login />} />
       <Route
         path="/"

@@ -154,20 +154,148 @@ code { background: #e8eeeb; padding: 2px 6px; border-radius: 4px; font-size: 12p
 /* Button loading state */
 button.is-loading { pointer-events: none; opacity: 0.75; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 
+/* === Hamburger button (hidden on desktop) === */
+.hamburger-btn { display: none; position: fixed; top: 14px; left: 14px; z-index: 1100; background: #0d352f; color: white; border: 1px solid #1b584e; padding: 10px 12px; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.2); }
+.hamburger-btn:hover { background: #164a42; transform: none; }
+
+/* Drawer overlay */
+.drawer-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; backdrop-filter: blur(2px); }
+.drawer-overlay.open { display: block; animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
 /* === Responsive === */
+
+/* --- Tablet (800–1199px) --- */
 @media (max-width: 1200px) {
   .cards { grid-template-columns: repeat(2, 1fr); }
   .chart-grid { grid-template-columns: 1fr; }
 }
 
+/* --- Mobile (< 800px) — Drawer navigation + table stacking --- */
 @media (max-width: 800px) {
-  aside { width: 63px; padding: 20px 8px; }
-  .brand { font-size: 0; padding: 0 0 26px; }
-  .brand small { display: none; }
-  aside a { font-size: 0; padding: 12px; justify-content: center; }
-  aside button { font-size: 0; justify-content: center; }
-  main { padding: 24px 18px; }
-  .cards { grid-template-columns: repeat(2, 1fr); }
+  /* Show hamburger */
+  .hamburger-btn { display: flex; }
+
+  /* Sidebar becomes a slide-out drawer */
+  aside {
+    position: fixed; top: 0; left: 0; z-index: 1050;
+    width: 280px; height: 100vh;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 26px 14px;
+  }
+  aside.drawer-open { transform: translateX(0); }
+  aside a, aside button { font-size: 13px; padding: 11px 13px; justify-content: flex-start; }
+  .brand { font-size: 22px; padding: 0 8px 20px; }
+  .brand small { display: block; }
+
+  /* Main content takes full width */
+  main { padding: 60px 16px 24px; }
+  header { flex-direction: column; align-items: flex-start; gap: 4px; }
   header .user { display: none; }
+  h1 { font-size: 24px; }
+  .eyebrow { font-size: 10px; }
+
+  /* Cards: 2 columns */
+  .cards { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .cards strong { font-size: 22px; }
   .chart-grid { grid-template-columns: 1fr; }
+
+  /* Toolbar stacks */
+  .toolbar { flex-direction: column; align-items: stretch; }
+  .toolbar input, .toolbar select { max-width: 100%; }
+
+  /* Table → stacked cards on mobile */
+  .panel.table { padding: 0; overflow: visible; }
+  table, thead, tbody, th, td, tr { display: block; }
+  thead { position: absolute; top: -9999px; left: -9999px; }
+  tbody tr {
+    padding: 14px 16px; margin-bottom: 8px;
+    border: 1px solid #e0e9e6; border-radius: 10px;
+    background: white; box-shadow: 0 1px 4px #18332e08;
+  }
+  tbody tr:hover { background: #f8fbfa; }
+  td {
+    padding: 4px 0; border-bottom: none;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 8px; font-size: 13px;
+    min-height: 28px;
+  }
+  td::before {
+    content: attr(data-label);
+    font-size: 11px; font-weight: 600; color: #607872;
+    text-transform: uppercase; letter-spacing: 0.3px;
+    flex-shrink: 0; min-width: 100px;
+  }
+  td:last-child { border-bottom: none; }
+
+  /* Upload panel full-width */
+  .upload { max-width: 100%; }
+
+  /* Forms: prevent iOS auto-zoom */
+  input, select, textarea { font-size: 16px; padding: 12px; min-height: 44px; }
+  button { min-height: 44px; }
+  .login input { font-size: 16px; }
+  .login form { padding: 28px 20px; }
+
+  /* Savings banner wraps */
+  .savings-banner { flex-wrap: wrap; font-size: 13px; padding: 12px 14px; }
+
+  /* Terminal: shrink on mobile */
+  .terminal-body { min-height: 200px; max-height: 60vh; font-size: 11px; padding: 12px; }
+  .terminal-header { flex-direction: column; gap: 8px; align-items: flex-start; padding: 10px 14px; }
+  .terminal-actions { flex-wrap: wrap; gap: 6px; }
+  .terminal-title span { font-size: 11px; }
+  .terminal-line { flex-wrap: wrap; gap: 4px; }
+  .term-subsystem { min-width: auto; font-size: 10px; }
+  .term-time { min-width: auto; font-size: 10px; }
+
+  /* Floating dock: smaller */
+  .floating-term-dock { bottom: 14px; right: 14px; padding: 8px 12px; font-size: 11px; }
+
+  /* Toast: full width */
+  .toast-container { top: 14px; right: 14px; left: 14px; max-width: none; }
+
+  /* Score breakdown in table — stack */
+  td[style*="monospace"] { word-break: break-all; }
+
+  /* Lead text smaller */
+  .lead { font-size: 13px; }
+
+  /* Result grid responsive */
+  .result-grid p { font-size: 13px; word-break: break-word; }
+}
+
+/* --- Small mobile (< 480px) --- */
+@media (max-width: 480px) {
+  main { padding: 56px 12px 20px; }
+  h1 { font-size: 20px; }
+
+  /* Cards: single column */
+  .cards { grid-template-columns: 1fr; gap: 8px; }
+  .cards article { padding: 14px; }
+  .cards strong { font-size: 20px; }
+
+  /* Login responsive */
+  .login { padding: 12px; }
+  .login form { padding: 24px 16px; border-radius: 12px; }
+  .login-logo { width: 72px; height: 72px; }
+  .login h1 { font-size: 24px; }
+
+  /* Buttons stack in match actions */
+  .btn-approve, .btn-reject { padding: 8px 14px; font-size: 12px; min-height: 40px; }
+
+  /* PieChart labels: hide them at very small sizes — Legend is enough */
+  .recharts-label, .recharts-pie-label-text { font-size: 9px !important; }
+
+  /* Header simplification */
+  header { margin-bottom: 16px; }
+  .eyebrow { font-size: 9px; letter-spacing: 0.8px; }
+
+  /* Terminal even more compact */
+  .terminal-body { min-height: 160px; max-height: 50vh; }
+  .terminal-btn { padding: 4px 7px; font-size: 10px; }
+
+  /* Integration result panel */
+  .panel[style*="max-width"] { max-width: 100% !important; }
 }
