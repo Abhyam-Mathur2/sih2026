@@ -98,11 +98,16 @@ function ToastProvider({ children }: { children: React.ReactNode }) {
 // ---------------------------------------------------------------------------
 // API client
 // ---------------------------------------------------------------------------
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+export function getWebApiBaseUrl(): string {
+  const saved = localStorage.getItem('sangam_api_url');
+  if (saved) return saved;
+  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+}
 
-const api = axios.create({ baseURL: API_BASE_URL, timeout: 35000 });
+const api = axios.create({ baseURL: getWebApiBaseUrl(), timeout: 35000 });
 
 api.interceptors.request.use((config) => {
+  config.baseURL = getWebApiBaseUrl();
   const token = localStorage.getItem('sangam_token') || localStorage.getItem('bmim_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
@@ -206,14 +211,21 @@ function Login() {
   const [password, setPassword] = useState('admin_secure_password_2026');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [serverUrl, setServerUrl] = useState(getWebApiBaseUrl());
+  const [showServerConfig, setShowServerConfig] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError('');
+    const targetUrl = serverUrl.trim() || getWebApiBaseUrl();
+    localStorage.setItem('sangam_api_url', targetUrl);
+    api.defaults.baseURL = targetUrl;
+
     try {
       const body = new URLSearchParams({ username: email, password });
       const { data } = await api.post('/auth/login', body, {
+        baseURL: targetUrl,
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       });
       localStorage.setItem('sangam_token', data.access_token);
@@ -222,8 +234,9 @@ function Login() {
       nav('/');
     } catch (err: any) {
       if (err.code === 'ERR_NETWORK' || !err.response) {
-        setError(`Cannot reach API server at ${API_BASE_URL}. Ensure FastAPI backend is running.`);
-        showToast('Network Error', `Cannot connect to API server at ${API_BASE_URL}`, 'error');
+        setError(`Cannot reach API server at ${targetUrl}. Configure your live Render backend URL below.`);
+        setShowServerConfig(true);
+        showToast('Network Error', `Cannot connect to API server at ${targetUrl}`, 'error');
       } else {
         setError('Invalid email or password');
         showToast('Authentication Error', 'Invalid credentials. Please verify your email and password.', 'error');
@@ -262,6 +275,55 @@ function Login() {
           )}
         </button>
         <small>Demo: admin@sangam.gov.in (or admin@example.com)</small>
+
+        <div style={{ marginTop: '16px', borderTop: '1px solid #e0e9e6', paddingTop: '12px', textAlign: 'center' }}>
+          <button
+            type="button"
+            onClick={() => setShowServerConfig(!showServerConfig)}
+            style={{ background: 'none', border: 'none', color: '#138a72', cursor: 'pointer', fontSize: '12px', fontWeight: 600, padding: 0 }}
+          >
+            ⚙️ API Server URL (Click to Change)
+          </button>
+          {showServerConfig && (
+            <div style={{ marginTop: '10px', textAlign: 'left', background: '#f5f8f7', padding: '12px', borderRadius: '8px', border: '1px solid #d4dfdc' }}>
+              <label style={{ fontSize: '11px', fontWeight: 700, color: '#18332e', display: 'block', marginBottom: '4px' }}>
+                Backend API URL
+              </label>
+              <input
+                type="text"
+                value={serverUrl}
+                onChange={(e) => setServerUrl(e.target.value)}
+                placeholder="https://your-backend.onrender.com/api/v1"
+                style={{ fontSize: '13px', padding: '8px', width: '100%', marginBottom: '8px', boxSizing: 'border-box' }}
+              />
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  style={{ fontSize: '11px', padding: '4px 10px', background: '#138a72', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                  onClick={() => {
+                    const trimmed = serverUrl.trim();
+                    localStorage.setItem('sangam_api_url', trimmed);
+                    api.defaults.baseURL = trimmed;
+                    showToast('Saved', 'API Server URL updated.', 'success');
+                  }}
+                >
+                  Save URL
+                </button>
+                <button
+                  type="button"
+                  style={{ fontSize: '11px', padding: '4px 10px', background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer' }}
+                  onClick={() => {
+                    setServerUrl('http://localhost:8000/api/v1');
+                    localStorage.setItem('sangam_api_url', 'http://localhost:8000/api/v1');
+                    api.defaults.baseURL = 'http://localhost:8000/api/v1';
+                  }}
+                >
+                  Reset Localhost
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </form>
     </div>
   );
